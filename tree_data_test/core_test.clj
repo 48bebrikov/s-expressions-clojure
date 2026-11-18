@@ -65,11 +65,6 @@
       (test/is (true? (tree/content-value? valid-data)))
       (test/is (false? (tree/content-value? invalid-data)))
       (test/is (true? (tree/content-value? nested-node))))))
-:цй
-ё666                                                        ;::wq
-
-
-
 
 (test/deftest node-tests
   (test/testing "Проверка структуры узла"
