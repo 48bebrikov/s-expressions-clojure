@@ -1,0 +1,11 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure {:mvn/version "1.13.0-alpha6"}}
+ :aliases
+ {:test
+  {:extra-paths ["test"]
+   :main-opts
+   ["-e" "(require 'clojure.test 'tree-data.core-test 'tree-data.query-test)"
+    "-e" "(when-not (clojure.test/successful? (clojure.test/run-tests 'tree-data.core-test 'tree-data.query-test)) (System/exit 1))"]}
+  :test-query
+  {:extra-paths ["test"]
+   :main-opts   ["-m" "tree-data.query-test"]}}}

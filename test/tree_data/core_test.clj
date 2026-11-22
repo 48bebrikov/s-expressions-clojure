@@ -1,4 +1,4 @@
-(ns tree-data-project.tree-data-test.core-test
+(ns tree-data.core-test
   (:require [clojure.test :as test]
             [tree-data.core :as tree]))
 
@@ -410,23 +410,27 @@
                          ["unknown"]
                          {"id" "10"})))))))
 
+; захардкоженный путь тут указывать не нужно, есть java.io.File/createTempFile
 (test/deftest file-operations-tests
   (let [doc (tree/create-tree
               "university"
               {}
               [["student" {"id" "1"} ["Анна"]]])
-        file-path "C:/Users/Admin/Downloads/test-tree.smc"]
+        temp-file (java.io.File/createTempFile "test-tree" ".smc")
+        file-path (.getAbsolutePath temp-file)]
+    (try
+      (test/testing "Сохранение и загрузка дерева"
+        (tree/save-tree doc file-path)
+        (test/is (= doc (tree/load-tree file-path))))
 
-    (test/testing "Сохранение и загрузка дерева"
-      (tree/save-tree doc file-path)
-      (test/is (= doc (tree/load-tree file-path))))
+      (test/testing "Сохранение с неправильным расширением"
+        (test/is
+          (thrown? clojure.lang.ExceptionInfo
+                   (tree/save-tree doc "tree.txt"))))
 
-    (test/testing "Сохранение с неправильным расширением"
-      (test/is
-        (thrown? clojure.lang.ExceptionInfo
-                 (tree/save-tree doc "tree.txt"))))
-
-    (test/testing "Загрузка с неправильным расширением"
-      (test/is
-        (thrown? clojure.lang.ExceptionInfo
-                 (tree/load-tree "tree.txt"))))))
+      (test/testing "Загрузка с неправильным расширением"
+        (test/is
+          (thrown? clojure.lang.ExceptionInfo
+                   (tree/load-tree "tree.txt"))))
+      (finally
+        (.delete temp-file)))))
