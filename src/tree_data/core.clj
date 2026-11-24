@@ -1,7 +1,6 @@
-(ns tree-data-project.tree-data.core
+(ns tree-data.core
   (:require [clojure.edn :as edn]))
 
-(declare node?)
 (def format-name "SMC") ; S-Expression Markup for Clojure
 (def format-version 1)
 
@@ -54,23 +53,17 @@
 (defn content-value?
   "Проверяет, является ли значение допустимым содержимым узла."
   [value]
-  (cond
-    (primitive? value)
-    true
-
-    (node? value)
-    (every? content-value? (nth value 2))
-
-    (map? value)
-    (and
-      (object? value)
-      (every? content-value? (vals value)))
-
-    (array? value)
-    (every? content-value? value)
-
-    :else
-    false))
+  ;; Узел тоже вектор. Вызов node? здесь повторно обошел бы поддерево
+  (loop [pending (list value)]
+    (if-let [items (seq pending)]
+      (let [item (first items)
+            more (rest items)]
+        (cond
+          (primitive? item) (recur more)
+          (object? item)    (recur (into more (vals item)))
+          (array? item)     (recur (into more item))
+          :else false))
+      true)))
 
 (defn attributes?
   "Проверяет корректность атрибутов узла.
@@ -90,6 +83,15 @@
                 (string? value)))
             attributes)))
 
+(defn node-shape?
+  "Проверяет форму [имя атрибуты содержимое] без обхода потомков."
+  [value]
+  (and (vector? value)
+       (= 3 (count value))
+       (string? (first value))
+       (attributes? (second value))
+       (vector? (nth value 2))))
+
 (defn node?
   "Проверяет, является ли значение корректным узлом дерева.
 
@@ -100,13 +102,8 @@
    true, если значение соответствует структуре узла и все его составляющие корректны;
    false в противном случае."
   [value]
-  (and
-    (vector? value)
-    (= 3 (count value))
-    (string? (first value))
-    (attributes? (second value))
-    (vector? (nth value 2))
-    (every? content-value? (nth value 2))))
+  (and (node-shape? value)
+       (every? content-value? (nth value 2))))
 
 ; Операции для работы с узлами
 
@@ -144,7 +141,7 @@
 
    [name attributes content]))
 
-(defn node-name [node]
+(defn node-name
   "Возвращает имя узла дерева.
 
    Принимает:
@@ -152,9 +149,10 @@
 
    Возвращает:
    Имя узла в виде строки."
+  [node]
   (first node))
 
-(defn node-attributes [node]
+(defn node-attributes
   "Возвращает атрибуты узла дерева.
 
    Принимает:
@@ -163,6 +161,7 @@
    Возвращает:
    Набор атрибутов узла в виде map.
    Если атрибуты отсутствуют, возвращает пустое отображение."
+  [node]
   (second node))
 
 (defn node-content
@@ -637,14 +636,3 @@
                  {:file-data file-data})))
 
     {:root (:root file-data)}))
-
-
-
-
-
-
-
-
-
-
-
