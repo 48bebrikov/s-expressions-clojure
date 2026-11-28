@@ -120,6 +120,31 @@
     (is (= ["updated"] (ids (q/select-nodes result "//leaf"))))
     (is (= [leaf] (q/select-nodes d ".//leaf")))))
 
+(deftest select-node-locations-tests
+  (let [locations (q/select-node-locations doc "//student")
+        nodes (mapv :node locations)]
+    (testing "Находит те же узлы, что и select-nodes"
+      (is (= (q/select-nodes doc "//student") nodes))
+      (is (= ["1" "2" "same" "same" "3"] (ids nodes))))
+
+    (testing "Возвращает путь для каждого узла"
+      (is (every? vector? (map :path locations)))
+      (is (every? #(contains? % :node) locations))
+      (is (every? #(contains? % :path) locations)))
+
+    (testing "По пути можно получить исходный узел"
+      (doseq [{:keys [path node]} locations]
+        (is (= node
+               (reduce (fn [current index]
+                         (nth (tree/node-content current) index))
+                       (:root doc)
+                       path))))))
+
+  (testing "Работает с контекстом"
+    (let [locations (q/select-node-locations doc ["faculty" ["student" 1]] ".")]
+      (is (= 1 (count locations)))
+      (is (= "1" (get-in (first locations) [:node 1 "id"]))))))
+
 (defn -main [& _]
   (when-not (test/successful? (test/run-tests 'tree-data.query-test))
     (System/exit 1)))
