@@ -181,6 +181,23 @@
                                 (recur (if (seq next-active) (push-children todo loc next-active) todo)
                                        (cond-> found hit? (conj loc))))))))))
 
+(defn select-node-locations
+  "Находит узлы документа по запросу вместе с их путями.
+
+   Принимает:
+   doc — документ с корневым узлом в :root.
+   context — путь для относительного запроса. По умолчанию [].
+   expression — строка запроса или результат parse-query.
+
+   Возвращает:
+   Вектор map-структур вида {:path [...] :node [...] }."
+  ([doc expression]
+   (select-node-locations doc [] expression))
+  ([doc context expression]
+   (mapv (fn [[path node]]
+           {:path path :node node})
+         (locations doc context expression))))
+
 (defn select-nodes
       "Находит узлы документа по запросу.
 
